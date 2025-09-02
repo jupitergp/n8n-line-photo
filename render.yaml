@@ -5,7 +5,7 @@ services:
     name: postgres-db
     runtime: postgres
     plan: free
-    postgresMajorVersion: 14
+    # postgresMajorVersion: 14
     autoDeploy: false # แนะนำ: ป้องกันการรีสตาร์ทฐานข้อมูลโดยไม่จำเป็น
 
   # 2. n8n Web Service
