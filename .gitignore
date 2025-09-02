@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual Environment 
+venv/
+.venv/
+
+# n8n
+n8n_data/
+n8n_data_backup/
+
+# Environment variables
+.env
+
+# not use
+*.py
