@@ -1,11 +1,9 @@
 services:
   # 1. Database Service (PostgreSQL)
-  #    - แก้ไข `runtime` เป็น `database` และเพิ่ม `databaseName` กับ `user`
+  #    - Render จะสร้างชื่อฐานข้อมูลและผู้ใช้ให้ตรงกับ 'name' โดยอัตโนมัติ
   - type: pserv
     name: postgres-db
-    runtime: database # ⭐️ แก้ไขจาก postgres เป็น database
-    databaseName: n8n_data # ⭐️ เพิ่ม: ชื่อฐานข้อมูล
-    user: n8n_user # ⭐️ เพิ่ม: ชื่อผู้ใช้
+    runtime: postgres # ⭐️ กลับมาใช้ 'postgres' ถูกต้องแล้ว
     plan: free
     autoDeploy: false
 
@@ -22,7 +20,7 @@ services:
       - key: DB_TYPE
         value: postgresdb
 
-      # --- ดึงค่าการเชื่อมต่อ DB แยกกันทีละส่วน ---
+      # --- ดึงค่าการเชื่อมต่อ DB จาก Service ด้านบน ---
       - key: DB_POSTGRESDB_HOST
         fromService:
           type: pserv
@@ -32,17 +30,17 @@ services:
         fromService:
           type: pserv
           name: postgres-db
-          property: database
+          property: database # Render จะสร้างค่านี้ให้เอง
       - key: DB_POSTGRESDB_USER
         fromService:
           type: pserv
           name: postgres-db
-          property: user
+          property: user # Render จะสร้างค่านี้ให้เอง
       - key: DB_POSTGRESDB_PASSWORD
         fromService:
           type: pserv
           name: postgres-db
-          property: password
+          property: password # Render จะสร้างค่านี้ให้เอง
 
       # --- การตั้งค่าอื่นๆ ยังคงเดิม ---
       - key: N8N_TRUST_PROXY
