@@ -1,35 +1,50 @@
 services:
   # 1. Database Service (PostgreSQL)
-  #    - สร้างฐานข้อมูลถาวรสำหรับเก็บข้อมูล Workflows และ Credentials
+  #    - แก้ไข `runtime` เป็น `database` และเพิ่ม `databaseName` กับ `user`
   - type: pserv
     name: postgres-db
-    runtime: postgres
+    runtime: database # ⭐️ แก้ไขจาก postgres เป็น database
+    databaseName: n8n_data # ⭐️ เพิ่ม: ชื่อฐานข้อมูล
+    user: n8n_user # ⭐️ เพิ่ม: ชื่อผู้ใช้
     plan: free
-    # postgresMajorVersion: 14
-    autoDeploy: false # แนะนำ: ป้องกันการรีสตาร์ทฐานข้อมูลโดยไม่จำเป็น
+    autoDeploy: false
 
   # 2. n8n Web Service
-  #    - รันแอปพลิเคชัน n8n หลัก
   - type: web
     name: n8n
-    plan: free # หมายเหตุ: Plan ฟรีจะหยุดทำงานเมื่อไม่มีการใช้งาน ควรใช้ 'Starter' เพื่อให้ทำงาน 24/7
-    healthCheckPath: /healthz # Health check endpoint มาตรฐานของ n8n
+    plan: free
+    healthCheckPath: /healthz
     image:
-      url: n8nio/n8n # ⭐️ สำคัญ: ใช้ Docker Image ของ n8n โดยตรง
+      url: n8nio/n8n
 
     envVars:
       # --- กำหนดให้ n8n ใช้ฐานข้อมูล PostgreSQL ---
       - key: DB_TYPE
         value: postgresdb
 
-      # --- ดึง Connection String จาก Database Service มาใส่โดยอัตโนมัติ ---
-      - key: DB_POSTGRESDB_CONNECTION_STRING
+      # --- ดึงค่าการเชื่อมต่อ DB แยกกันทีละส่วน ---
+      - key: DB_POSTGRESDB_HOST
         fromService:
           type: pserv
           name: postgres-db
-          property: connectionString
+          property: host
+      - key: DB_POSTGRESDB_DATABASE
+        fromService:
+          type: pserv
+          name: postgres-db
+          property: database
+      - key: DB_POSTGRESDB_USER
+        fromService:
+          type: pserv
+          name: postgres-db
+          property: user
+      - key: DB_POSTGRESDB_PASSWORD
+        fromService:
+          type: pserv
+          name: postgres-db
+          property: password
 
-      # --- ตั้งค่าที่จำเป็นสำหรับการรันบน Render (หลัง Proxy) ---
+      # --- การตั้งค่าอื่นๆ ยังคงเดิม ---
       - key: N8N_TRUST_PROXY
         value: true
       - key: N8N_PROTOCOL
@@ -38,15 +53,6 @@ services:
         value: ${RENDER_EXTERNAL_HOSTNAME}
       - key: WEBHOOK_URL
         value: ${RENDER_EXTERNAL_URL}
-
-      # --- การตั้งค่าที่แนะนำเพิ่มเติม ---
       - key: GENERIC_TIMEZONE
         value: Asia/Bangkok
-      # - key: N8N_RUNNERS_ENABLED # สำหรับการขยายระบบขั้นสูง ยังไม่จำเป็นต้องใช้ตอนนี้
-      #   value: true
 
-    # --- สร้าง Persistent Disk สำหรับเก็บข้อมูล n8n ---
-    # disk:
-    #   name: n8n-data
-    #   mountPath: /home/node/.n8n
-    #   sizeGB: 1 # ✏️ เพิ่มขนาดได้ตามต้องการ
