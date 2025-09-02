@@ -1,45 +1,49 @@
 services:
-  # 1. สร้าง Managed PostgreSQL Database
+  # 1. Database Service (PostgreSQL)
+  #    - สร้างฐานข้อมูลถาวรสำหรับเก็บข้อมูล Workflows และ Credentials
   - type: pserv
     name: postgres-db
     runtime: postgres
-    plan: free # ✏️ เปลี่ยนเป็น plan ที่ต้องการเมื่อใช้งานจริง
+    plan: free
     postgresMajorVersion: 14
+    autoDeploy: false # แนะนำ: ป้องกันการรีสตาร์ทฐานข้อมูลโดยไม่จำเป็น
 
-  # 2. สร้าง n8n Web Service
+  # 2. n8n Web Service
+  #    - รันแอปพลิเคชัน n8n หลัก
   - type: web
     name: n8n
-    runtime: docker
-    plan: free # ⚠️ ต้องเปลี่ยนเป็น 'starter' หรือสูงกว่าเพื่อให้ Webhook ทำงาน 24/7
-    dockerfilePath: ./Dockerfile
-    healthCheckPath: /healthz
+    plan: free # หมายเหตุ: Plan ฟรีจะหยุดทำงานเมื่อไม่มีการใช้งาน ควรใช้ 'Starter' เพื่อให้ทำงาน 24/7
+    healthCheckPath: /healthz # Health check endpoint มาตรฐานของ n8n
+    image:
+      url: n8nio/n8n # ⭐️ สำคัญ: ใช้ Docker Image ของ n8n โดยตรง
+
     envVars:
-      # --- ดึงค่าการเชื่อมต่อ Database จาก Service ด้านบนอัตโนมัติ ---
-      - fromService:
+      # --- กำหนดให้ n8n ใช้ฐานข้อมูล PostgreSQL ---
+      - key: DB_TYPE
+        value: postgresdb
+
+      # --- ดึง Connection String จาก Database Service มาใส่โดยอัตโนมัติ ---
+      - key: DB_POSTGRESDB_CONNECTION_STRING
+        fromService:
           type: pserv
           name: postgres-db
           property: connectionString
-        envVar: DB_POSTGRESDB_CONNECTION_STRING
 
-      # --- ตั้งค่า Environment Variables สำหรับ n8n ---
-      - key: DB_TYPE
-        value: postgresdb
-      - key: GENERIC_TIMEZONE
-        value: Asia/Bangkok
-      - key: N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS
-        value: true
-      - key: N8N_RUNNERS_ENABLED
-        value: true
+      # --- ตั้งค่าที่จำเป็นสำหรับการรันบน Render (หลัง Proxy) ---
       - key: N8N_TRUST_PROXY
         value: true
-        
-      # --- Render จะใส่ค่า Host และ Webhook URL ให้เองอัตโนมัติ ---
       - key: N8N_PROTOCOL
         value: https
       - key: N8N_HOST
         value: ${RENDER_EXTERNAL_HOSTNAME}
       - key: WEBHOOK_URL
         value: ${RENDER_EXTERNAL_URL}
+
+      # --- การตั้งค่าที่แนะนำเพิ่มเติม ---
+      - key: GENERIC_TIMEZONE
+        value: Asia/Bangkok
+      # - key: N8N_RUNNERS_ENABLED # สำหรับการขยายระบบขั้นสูง ยังไม่จำเป็นต้องใช้ตอนนี้
+      #   value: true
 
     # --- สร้าง Persistent Disk สำหรับเก็บข้อมูล n8n ---
     # disk:
