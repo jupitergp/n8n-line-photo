@@ -1,0 +1,48 @@
+services:
+  # 1. สร้าง Managed PostgreSQL Database
+  - type: pserv
+    name: postgres-db
+    runtime: postgres
+    plan: free # ✏️ เปลี่ยนเป็น plan ที่ต้องการเมื่อใช้งานจริง
+    postgresMajorVersion: 14
+
+  # 2. สร้าง n8n Web Service
+  - type: web
+    name: n8n
+    runtime: docker
+    plan: free # ⚠️ ต้องเปลี่ยนเป็น 'starter' หรือสูงกว่าเพื่อให้ Webhook ทำงาน 24/7
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    envVars:
+      # --- ดึงค่าการเชื่อมต่อ Database จาก Service ด้านบนอัตโนมัติ ---
+      - fromService:
+          type: pserv
+          name: postgres-db
+          property: connectionString
+        envVar: DB_POSTGRESDB_CONNECTION_STRING
+
+      # --- ตั้งค่า Environment Variables สำหรับ n8n ---
+      - key: DB_TYPE
+        value: postgresdb
+      - key: GENERIC_TIMEZONE
+        value: Asia/Bangkok
+      - key: N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS
+        value: true
+      - key: N8N_RUNNERS_ENABLED
+        value: true
+      - key: N8N_TRUST_PROXY
+        value: true
+        
+      # --- Render จะใส่ค่า Host และ Webhook URL ให้เองอัตโนมัติ ---
+      - key: N8N_PROTOCOL
+        value: https
+      - key: N8N_HOST
+        value: ${RENDER_EXTERNAL_HOSTNAME}
+      - key: WEBHOOK_URL
+        value: ${RENDER_EXTERNAL_URL}
+
+    # --- สร้าง Persistent Disk สำหรับเก็บข้อมูล n8n ---
+    # disk:
+    #   name: n8n-data
+    #   mountPath: /home/node/.n8n
+    #   sizeGB: 1 # ✏️ เพิ่มขนาดได้ตามต้องการ
