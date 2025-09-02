@@ -1,13 +1,16 @@
-services:
-  # 1. Database Service (PostgreSQL)
-  #    - Render จะสร้างชื่อฐานข้อมูลและผู้ใช้ให้ตรงกับ 'name' โดยอัตโนมัติ
-  - type: pserv
-    name: postgres-db
-    runtime: postgres # ⭐️ กลับมาใช้ 'postgres' ถูกต้องแล้ว
+# Blueprint Spec Version
+version: "1"
+
+# 1. Database Service Definition
+#    - ใช้หมวดหมู่ 'databases' โดยเฉพาะ
+databases:
+  - name: postgres-db
     plan: free
     autoDeploy: false
+    # หมายเหตุ: Render จะสร้าง databaseName และ user ให้ตรงกับ name โดยอัตโนมัติ
 
-  # 2. n8n Web Service
+# 2. Web Service Definition
+services:
   - type: web
     name: n8n
     plan: free
@@ -20,27 +23,23 @@ services:
       - key: DB_TYPE
         value: postgresdb
 
-      # --- ดึงค่าการเชื่อมต่อ DB จาก Service ด้านบน ---
+      # --- ดึงค่าการเชื่อมต่อจาก 'databases' ด้านบน ---
       - key: DB_POSTGRESDB_HOST
-        fromService:
-          type: pserv
+        fromDatabase: # ⭐️ แก้ไข: อ้างอิงจาก 'databases'
           name: postgres-db
           property: host
       - key: DB_POSTGRESDB_DATABASE
-        fromService:
-          type: pserv
+        fromDatabase: # ⭐️ แก้ไข: อ้างอิงจาก 'databases'
           name: postgres-db
-          property: database # Render จะสร้างค่านี้ให้เอง
+          property: database
       - key: DB_POSTGRESDB_USER
-        fromService:
-          type: pserv
+        fromDatabase: # ⭐️ แก้ไข: อ้างอิงจาก 'databases'
           name: postgres-db
-          property: user # Render จะสร้างค่านี้ให้เอง
+          property: user
       - key: DB_POSTGRESDB_PASSWORD
-        fromService:
-          type: pserv
+        fromDatabase: # ⭐️ แก้ไข: อ้างอิงจาก 'databases'
           name: postgres-db
-          property: password # Render จะสร้างค่านี้ให้เอง
+          property: password
 
       # --- การตั้งค่าอื่นๆ ยังคงเดิม ---
       - key: N8N_TRUST_PROXY
@@ -53,4 +52,3 @@ services:
         value: ${RENDER_EXTERNAL_URL}
       - key: GENERIC_TIMEZONE
         value: Asia/Bangkok
-
