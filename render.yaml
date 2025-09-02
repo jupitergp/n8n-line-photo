@@ -2,12 +2,10 @@
 version: "1"
 
 # 1. Database Service Definition
-#    - ใช้หมวดหมู่ 'databases' โดยเฉพาะ
 databases:
   - name: postgres-db
     plan: free
-    autoDeploy: false
-    # หมายเหตุ: Render จะสร้าง databaseName และ user ให้ตรงกับ name โดยอัตโนมัติ
+    # autoDeploy: false # ⭐️ ลบบรรทัดนี้ออก
 
 # 2. Web Service Definition
 services:
@@ -25,19 +23,19 @@ services:
 
       # --- ดึงค่าการเชื่อมต่อจาก 'databases' ด้านบน ---
       - key: DB_POSTGRESDB_HOST
-        fromDatabase: # ⭐️ แก้ไข: อ้างอิงจาก 'databases'
+        fromDatabase:
           name: postgres-db
           property: host
       - key: DB_POSTGRESDB_DATABASE
-        fromDatabase: # ⭐️ แก้ไข: อ้างอิงจาก 'databases'
+        fromDatabase:
           name: postgres-db
           property: database
       - key: DB_POSTGRESDB_USER
-        fromDatabase: # ⭐️ แก้ไข: อ้างอิงจาก 'databases'
+        fromDatabase:
           name: postgres-db
           property: user
       - key: DB_POSTGRESDB_PASSWORD
-        fromDatabase: # ⭐️ แก้ไข: อ้างอิงจาก 'databases'
+        fromDatabase:
           name: postgres-db
           property: password
 
@@ -52,3 +50,4 @@ services:
         value: ${RENDER_EXTERNAL_URL}
       - key: GENERIC_TIMEZONE
         value: Asia/Bangkok
+
